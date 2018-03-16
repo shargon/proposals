@@ -13,7 +13,7 @@ We believe is necessary a P2P protocol optimization to avoid unnecessary data ex
 
 ==Motivation==
 
-Improve the P2P protocol to support higher loads, improve the behavior of delayed communications and prioritize consensus messages. We think that is necessary to implement a compression mechanism and safe all bytes that should be possible
+Improve the P2P protocol to support higher loads, improve the communications speed and prioritize consensus messages. We think that is necessary to implement a compression mechanism and safe all bytes that should be possible
 
 ==Specification==
 
@@ -33,8 +33,8 @@ TODO
 
 ==Implementation==
 
-The current header includes 4 bytes of magic numbers in all messages. 
-The proposal try to change this header to 20 bytes only during the initial negotiation of the communication.
+The current header includes a magic numbers of 4 bytes in all messages. 
+This proposal try to change this header to 20 bytes only during the initial negotiation of the communication avoiding message overload.
 
  +--------------------------+       +--------------------------------------------------------+
  |   Protocol negotiation   |  ...  |                    Message Protocol                    |  
@@ -45,7 +45,7 @@ The proposal try to change this header to 20 bytes only during the initial negot
 
 ===Protocol negotiation (20 bytes)===
 
-This is the first message sended, and is checked for continue or disconnect the client.
+This is the first message sent, and UUID (Protocol Magic Number) is evaluated to establish the connection or disconnect the client.
 
  +----------------------------+
  |    Protocol negotiation    |
@@ -55,17 +55,21 @@ This is the first message sended, and is checked for continue or disconnect the 
  +------+ |  Version Message  |
  | 16 b | |                   |
  +------+ +-------------------+ 
- 
+
 * UUID - 16 bytes
 
-We think that is better have unique id (16 bytes) than one integer (4 bytes per message) as currently doing
+We think that is better have a unique id (16 bytes) on the negotiation than an integer (4 bytes) on each message.
+UUID should be defined on protocol.json as NEO protocol ID.
 
 * Version Message
 
-This message is like Message Protocol with the [VersionPayload](https://github.com/neo-project/neo/blob/master/neo/Network/Payloads/VersionPayload.cs) as Payload
+This field is a ''Message Protocol'' with the ''Command'' defined as ''version''. The payload attributed to this message is ''VersionPayload'' as defined [https://github.com/neo-project/neo/blob/master/neo/Network/Payloads/VersionPayload.cs here].
 
-- Version Payload
-  Current version payload have Services, we propose to add SSL as service (0x02), for change the TCP to SSLStream
+<pre>
+Version Payload
+
+Current version payload has Services field, we propose to change it to Enum Type and add SSL as possible value (0x02). With this value SSLStream will be used instead of NetworkStream.
+</pre>
 
 ===Message Protocol===
 
@@ -86,7 +90,7 @@ Once this check is made, the communication flow begins as defined below.
 
 The availables MessageFlags are:
   
-  - None= 0x00,
+  - None = 0x00,
   - Compressed = 0x01
   - Urgent = 0x02
 
@@ -118,12 +122,12 @@ Currently the available commands are:
 
 * Message CRC - 2 bytes
 
-Message Checksum
+Message Checksum. Light CRC function instead of SHA256. [https://stackoverflow.com/questions/27939882/fast-crc-algorithm *]
 
 * Payload Size - 4 bytes
 
-Payload size
+Payload size. Integer (little-endian).
 
-* Payload - X bytes
+* Payload - n bytes
 
-Payload
+This field contains the message data.
